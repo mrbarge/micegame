@@ -44,7 +44,7 @@ export class GameLogic {
             this.gameBoard.blueMicePositions : this.gameBoard.redMicePositions;
         const mouseType = player === GAME_CONFIG.PLAYERS.BLUE ?
             GAME_CONFIG.CELL_TYPES.BLUE_MOUSE : GAME_CONFIG.CELL_TYPES.RED_MOUSE;
-        const targetDirection = player === GAME_CONFIG.PLAYERS.BLUE ? -1 : 1; // Blue goes left, Red goes right
+        const targetDirection = player === GAME_CONFIG.PLAYERS.BLUE ? 1 : -1; // Blue goes right, Red goes left
 
         // Process each mouse
         for (let i = 0; i < micePositions.length; i++) {
@@ -57,7 +57,8 @@ export class GameLogic {
 
                 // Try to move down first
                 if (mouse.row + 1 < GAME_CONFIG.GRID_HEIGHT &&
-                    this.gameBoard.isEmpty(mouse.row + 1, mouse.col)) {
+                    this.gameBoard.isEmpty(mouse.row + 1, mouse.col) &&
+                    !this.isCellOccupiedByMouse(mouse.row + 1, mouse.col)) {
 
                     this.gameBoard.grid[mouse.row][mouse.col] = GAME_CONFIG.CELL_TYPES.EMPTY;
                     mouse.row++;
@@ -69,7 +70,8 @@ export class GameLogic {
                 // Try to move horizontally toward goal
                 const newCol = mouse.col + targetDirection;
                 if (newCol >= 0 && newCol < GAME_CONFIG.GRID_WIDTH &&
-                    this.gameBoard.isEmpty(mouse.row, newCol)) {
+                    this.gameBoard.isEmpty(mouse.row, newCol) &&
+                    !this.isCellOccupiedByMouse(mouse.row, newCol)) {
 
                     this.gameBoard.grid[mouse.row][mouse.col] = GAME_CONFIG.CELL_TYPES.EMPTY;
                     mouse.col = newCol;
@@ -77,8 +79,8 @@ export class GameLogic {
                     moved = true;
 
                     // Check if mouse reached the goal
-                    if ((player === GAME_CONFIG.PLAYERS.BLUE && mouse.col === 0) ||
-                        (player === GAME_CONFIG.PLAYERS.RED && mouse.col === GAME_CONFIG.GRID_WIDTH - 1)) {
+                    if ((player === GAME_CONFIG.PLAYERS.BLUE && mouse.col === GAME_CONFIG.GRID_WIDTH - 1) ||
+                        (player === GAME_CONFIG.PLAYERS.RED && mouse.col === 0)) {
                         this.scorePoint(player);
                         this.removeMouse(player, i);
                         i--; // Adjust index since we removed a mouse
@@ -137,5 +139,11 @@ export class GameLogic {
     updateScoreDisplay() {
         document.getElementById('blue-score').textContent = this.blueScore;
         document.getElementById('red-score').textContent = this.redScore;
+    }
+
+    isCellOccupiedByMouse(row, col) {
+        const cellType = this.gameBoard.getCellType(row, col);
+        return cellType === GAME_CONFIG.CELL_TYPES.BLUE_MOUSE ||
+            cellType === GAME_CONFIG.CELL_TYPES.RED_MOUSE;
     }
 }

@@ -78,53 +78,62 @@ body {
     border: 2px solid #3498db;
 }
 
+/* Game area container */
+#game-area {
+    position: relative;
+    display: inline-block;
+}
+
 /* Game canvas container */
 #phaser-game {
     border: 3px solid #34495e;
     border-radius: 10px;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
     background: #2c3e50;
-    margin-bottom: 15px;
+    display: block;
 }
 
-/* Controls */
+/* Controls overlay */
 #controls {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
-    max-width: 800px;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
 }
 
 #column-controls {
-    display: flex;
-    justify-content: center;
-    gap: 2px;
-    flex-wrap: wrap;
-}
-
-.column-control {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
+    position: relative;
+    width: 100%;
+    height: 100%;
 }
 
 .column-btn {
+    position: absolute;
     width: 32px;
-    height: 24px;
+    height: 32px;
     background: linear-gradient(135deg, #3498db, #2980b9);
     border: none;
     border-radius: 4px;
     color: white;
-    font-size: 12px;
+    font-size: 14px;
     font-weight: bold;
     cursor: pointer;
     transition: all 0.2s ease;
     user-select: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .column-btn:hover {
     background: linear-gradient(135deg, #2980b9, #1f5f8b);
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
 }
 
 .column-btn:active {
@@ -136,13 +145,21 @@ body {
     background: #7f8c8d;
     cursor: not-allowed;
     transform: none;
-    box-shadow: none;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .column-number {
+    position: absolute;
     font-size: 10px;
     color: #bdc3c7;
-    margin: 2px 0;
+    text-align: center;
+    width: 20px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
 }
 
 /* Mobile responsiveness */
@@ -158,9 +175,7 @@ body {
     }
 
     .column-btn {
-        width: 28px;
-        height: 20px;
-        font-size: 10px;
+        font-size: 12px;
     }
 
     .column-number {
@@ -178,13 +193,11 @@ body {
     }
 
     .column-btn {
-        width: 24px;
-        height: 18px;
-        font-size: 9px;
+        font-size: 10px;
     }
 
-    #column-controls {
-        gap: 1px;
+    .column-number {
+        font-size: 8px;
     }
 }
 
