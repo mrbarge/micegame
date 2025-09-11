@@ -50,32 +50,74 @@ export class GameBoard {
         const micePositions = player === GAME_CONFIG.PLAYERS.BLUE ? this.blueMicePositions : this.redMicePositions;
         const mouseType = player === GAME_CONFIG.PLAYERS.BLUE ? GAME_CONFIG.CELL_TYPES.BLUE_MOUSE : GAME_CONFIG.CELL_TYPES.RED_MOUSE;
 
-        for (let i = 0; i < GAME_CONFIG.MICE_PER_PLAYER; i++) {
-            let placed = false;
-            let attempts = 0;
+        // First, collect all valid positions across all available columns
+        const validPositions = [];
 
-            while (!placed && attempts < 100) {
-                const col = availableColumns[Math.floor(Math.random() * availableColumns.length)];
+        for (const col of availableColumns) {
+            // Find all valid positions in this column (stacking upward from surfaces)
+            const columnPositions = this.getValidPositionsInColumn(col);
+            columnPositions.forEach(row => {
+                validPositions.push({ row, col });
+            });
+        }
 
-                // Find the highest wall or mouse in this column
-                let surfaceRow = GAME_CONFIG.GRID_HEIGHT - 1;
-                for (let row = 0; row < GAME_CONFIG.GRID_HEIGHT; row++) {
-                    if (this.grid[row][col] === GAME_CONFIG.CELL_TYPES.WALL ||
-                        this.grid[row][col] === GAME_CONFIG.CELL_TYPES.BLUE_MOUSE ||
-                        this.grid[row][col] === GAME_CONFIG.CELL_TYPES.RED_MOUSE) {
-                        surfaceRow = row - 1;
-                        break;
-                    }
-                }
+        // Shuffle the valid positions to randomize placement
+        for (let i = validPositions.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [validPositions[i], validPositions[j]] = [validPositions[j], validPositions[i]];
+        }
 
-                if (surfaceRow >= 0) {
-                    this.grid[surfaceRow][col] = mouseType;
-                    micePositions.push({ row: surfaceRow, col: col });
-                    placed = true;
-                }
-                attempts++;
+        // Place mice in the first 12 valid positions
+        let placedCount = 0;
+        for (let i = 0; i < validPositions.length && placedCount < GAME_CONFIG.MICE_PER_PLAYER; i++) {
+            const pos = validPositions[i];
+
+            // Double-check the position is still empty (in case of overlapping placements)
+            if (this.grid[pos.row][pos.col] === GAME_CONFIG.CELL_TYPES.EMPTY) {
+                this.grid[pos.row][pos.col] = mouseType;
+                micePositions.push({ row: pos.row, col: pos.col });
+                placedCount++;
             }
         }
+
+        // Log results for debugging
+        if (placedCount < GAME_CONFIG.MICE_PER_PLAYER) {
+            console.warn(`Only placed ${placedCount} out of ${GAME_CONFIG.MICE_PER_PLAYER} mice for ${player} - not enough valid positions`);
+        } else {
+            console.log(`Successfully placed ${placedCount} mice for ${player}`);
+        }
+    }
+
+    getValidPositionsInColumn(col) {
+        const positions = [];
+
+        // Start from the bottom and work up, finding surfaces to place mice on
+        let currentSurfaceRow = GAME_CONFIG.GRID_HEIGHT - 1;
+
+        // Check each row from bottom to top
+        for (let row = GAME_CONFIG.GRID_HEIGHT - 1; row >= 0; row--) {
+            if (this.grid[row][col] === GAME_CONFIG.CELL_TYPES.WALL) {
+                // Found a wall, mice can be placed above it
+                currentSurfaceRow = row - 1;
+
+                // Add valid positions above this wall (stacking upward)
+                let stackRow = currentSurfaceRow;
+                while (stackRow >= 0) {
+                    positions.push(stackRow);
+                    stackRow--;
+                }
+                break; // Stop at first wall found from bottom
+            }
+        }
+
+        // If no walls found in column, mice can be placed from bottom up
+        if (positions.length === 0) {
+            for (let row = GAME_CONFIG.GRID_HEIGHT - 1; row >= 0; row--) {
+                positions.push(row);
+            }
+        }
+
+        return positions;
     }
 
     moveColumn(col, direction) {
@@ -140,5 +182,26 @@ export class GameBoard {
 
     isEmpty(row, col) {
         return this.getCellType(row, col) === GAME_CONFIG.CELL_TYPES.EMPTY;
+    }
+
+    // Method to count mice on the board for verification
+    countMice() {
+        const counts = {
+            blue: 0,
+            red: 0
+        };
+
+        for (let row = 0; row < GAME_CONFIG.GRID_HEIGHT; row++) {
+            for (let col = 0; col < GAME_CONFIG.GRID_WIDTH; col++) {
+                if (this.grid[row][col] === GAME_CONFIG.CELL_TYPES.BLUE_MOUSE) {
+                    counts.blue++;
+                } else if (this.grid[row][col] === GAME_CONFIG.CELL_TYPES.RED_MOUSE) {
+                    counts.red++;
+                }
+            }
+        }
+
+        console.log(`Mice on board - Blue: ${counts.blue}, Red: ${counts.red}`);
+        return counts;
     }
 }
