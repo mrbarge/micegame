@@ -199,9 +199,61 @@ export class GameScene extends Phaser.Scene {
         }
     }
 
-    handleColumnMove(col, direction) {
-        if (this.gameLogic.makeMove(col, direction)) {
-            this.updateGridDisplay();
-        }
+    async handleColumnMove(col, direction) {
+        await this.gameLogic.makeMove(col, direction);
+    }
+
+    animateMouseMovement(fromRow, fromCol, toRow, toCol, mouseType) {
+        return new Promise((resolve) => {
+            const startX = 50;
+            const startY = 75;
+
+            const fromX = startX + fromCol * GAME_CONFIG.CELL_SIZE;
+            const fromY = startY + fromRow * GAME_CONFIG.CELL_SIZE;
+            const toX = startX + toCol * GAME_CONFIG.CELL_SIZE;
+            const toY = startY + toRow * GAME_CONFIG.CELL_SIZE;
+
+            // Get the sprite from the source cell
+            const fromCell = this.cellGraphics[fromRow][fromCol];
+            const sprite = fromCell.sprite;
+
+            if (!sprite) {
+                // If no sprite exists, create one
+                const textureName = mouseType === GAME_CONFIG.CELL_TYPES.BLUE_MOUSE ? 'blueMouse' : 'redMouse';
+                const newSprite = this.add.image(fromX, fromY, textureName);
+
+                // Animate to new position
+                this.tweens.add({
+                    targets: newSprite,
+                    x: toX,
+                    y: toY,
+                    duration: 300, // 0.3 seconds per move
+                    ease: 'Power2',
+                    onComplete: () => {
+                        // Update the grid display after animation
+                        this.updateGridDisplay();
+                        resolve();
+                    }
+                });
+            } else {
+                // Clear the sprite from the old cell
+                fromCell.sprite = null;
+
+                // Animate existing sprite to new position
+                this.tweens.add({
+                    targets: sprite,
+                    x: toX,
+                    y: toY,
+                    duration: 300, // 0.3 seconds per move
+                    ease: 'Power2',
+                    onComplete: () => {
+                        // The sprite will be properly positioned by updateGridDisplay
+                        sprite.destroy();
+                        this.updateGridDisplay();
+                        resolve();
+                    }
+                });
+            }
+        });
     }
 }
