@@ -203,6 +203,78 @@ export class GameScene extends Phaser.Scene {
         await this.gameLogic.makeMove(col, direction);
     }
 
+    animateColumnMovement(col, direction) {
+        return new Promise((resolve) => {
+            const startX = 50;
+            const startY = 75;
+            const columnX = startX + col * GAME_CONFIG.CELL_SIZE;
+
+            // Create temporary sprites for the current column state
+            const tempSprites = [];
+
+            for (let row = 0; row < GAME_CONFIG.GRID_HEIGHT; row++) {
+                const cellType = this.gameBoard.getCellType(row, col);
+                const y = startY + row * GAME_CONFIG.CELL_SIZE;
+                let sprite = null;
+
+                // Create appropriate sprite based on cell type
+                switch (cellType) {
+                    case GAME_CONFIG.CELL_TYPES.WALL:
+                        sprite = this.add.image(columnX, y, 'wall');
+                        break;
+                    case GAME_CONFIG.CELL_TYPES.BLUE_MOUSE:
+                        sprite = this.add.image(columnX, y, 'blueMouse');
+                        break;
+                    case GAME_CONFIG.CELL_TYPES.RED_MOUSE:
+                        sprite = this.add.image(columnX, y, 'redMouse');
+                        break;
+                    default:
+                        // Create empty cell sprite (invisible)
+                        sprite = this.add.rectangle(columnX, y, GAME_CONFIG.CELL_SIZE - 1, GAME_CONFIG.CELL_SIZE - 1, 0x2c3e50, 0);
+                        break;
+                }
+
+                if (sprite) {
+                    sprite.setDepth(1000); // Ensure temp sprites are on top
+                    tempSprites.push(sprite);
+                }
+            }
+
+            // Calculate target positions for animation
+            const animations = [];
+
+            for (let row = 0; row < GAME_CONFIG.GRID_HEIGHT; row++) {
+                const sprite = tempSprites[row];
+                let targetRow;
+
+                if (direction === 1) { // Moving up
+                    targetRow = row === 0 ? GAME_CONFIG.GRID_HEIGHT - 1 : row - 1;
+                } else { // Moving down
+                    targetRow = row === GAME_CONFIG.GRID_HEIGHT - 1 ? 0 : row + 1;
+                }
+
+                const targetY = startY + targetRow * GAME_CONFIG.CELL_SIZE;
+
+                // Create animation for this sprite
+                const tween = this.tweens.add({
+                    targets: sprite,
+                    y: targetY,
+                    duration: 400, // 0.4 seconds for column movement
+                    ease: 'Power2',
+                    onComplete: () => {
+                        animations.push('complete');
+                        // When all animations are complete
+                        if (animations.length === GAME_CONFIG.GRID_HEIGHT) {
+                            // Clean up temporary sprites
+                            tempSprites.forEach(s => s.destroy());
+                            resolve();
+                        }
+                    }
+                });
+            }
+        });
+    }
+
     animateMouseMovement(fromRow, fromCol, toRow, toCol, mouseType) {
         return new Promise((resolve) => {
             const startX = 50;

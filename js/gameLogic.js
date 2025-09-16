@@ -26,6 +26,12 @@ export class GameLogic {
         // Disable all buttons during move processing
         this.setButtonsEnabled(false);
 
+        // Animate the column movement first
+        if (window.gameScene) {
+            await window.gameScene.animateColumnMovement(col, direction);
+        }
+
+        // Apply the logical column move
         this.gameBoard.moveColumn(col, direction);
 
         // Update display after column move
